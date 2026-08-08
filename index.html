@@ -3,36 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专属考前备考练习</title>
+    <title>考前备考练习</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif;}
         body{background:#f5f7fa;padding:16px;color:#222;max-width:720px;margin:0 auto;}
-        .box{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px #00000015;}
-        .title{font-size:20px;font-weight:bold;margin-bottom:8px;text-align:center;}
+        .box{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.1);}
+        .title{font-size:20px;font-weight:bold;text-align:center;margin-bottom:8px;}
         .desc-text{font-size:14px;color:#555;text-align:center;margin-bottom:12px;line-height:1.6;}
         .timer-wrap{text-align:right;margin:-8px 0 10px 0;font-size:16px;font-weight:500;}
         .timer-red{color:#dc2626;}
         .q-index{color:#666;font-size:14px;margin-bottom:10px;}
-        .q-type-tag{display:inline-block;font-size:13px;padding:2px 8px;border-radius:4px;background:#e2e8f0;margin-right:8px;}
+        .q-type-tag{display:inline-block;font-size:13px;padding:2px 8px;border-radius:4px;background:#e8edf3;margin-right:8px;}
         .q-text{font-size:17px;line-height:1.6;margin-bottom:16px;}
         .option-item{padding:12px 14px;border:1px solid #ddd;border-radius:8px;margin-bottom:10px;cursor:pointer;}
         .option-item.active{border-color:#2563eb;background:#eff6ff;}
-        button{width:100%;padding:14px;border:none;border-radius:10px;background:#2563eb;color:white;font-size:16px;margin-top:8px;}
+        button{width:100%;padding:14px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:16px;margin-top:8px;cursor:pointer;}
         button.warn{background:#ef4444;}
         button.gray{background:#64748b;}
-        button:disabled{background:#94a3b8;}
+        button:disabled{background:#94a3b8;cursor:not-allowed;}
         .result-box{display:none;}
-        .score-text{text-align:center;font-size:22px;font-weight:bold;margin:12px 0;}
-        .answer-info{margin-top:12px;padding:14px;background:#f0fdf4;border-radius:8px;font-size:15px;line-height:1.7;margin-bottom:12px;}
-        .hide{display:none;}
+        .hide{display:none !important;}
         .home-box{text-align:center;}
         .err-count-tip{margin:10px 0;color:#dc2626;font-size:15px;}
+        .score-text{text-align:center;font-size:22px;font-weight:bold;margin:12px 0;}
+        .answer-info{margin-top:12px;padding:14px;background:#f0fdf4;border-radius:8px;font-size:15px;line-height:1.7;margin-bottom:12px;}
+        /* 底部鼓励文字样式 */
+        .footer-tip{text-align:center;color:#3b82f6;font-size:15px;margin-top:30px;padding:10px 0;}
     </style>
 </head>
 <body>
-<!--首页-->
+<!--首页区域-->
 <div id="home-area" class="box home-box">
-    <div class="title">专属考前备考练习</div>
+    <div class="title">考前备考练习</div>
     <div class="desc-text">单选30道(每题2分)，多选10道(每题2分)，判断10道(每题2分)，共50题，满分100分</div>
     <div class="err-count-tip">错题数量：<span id="err-count">0</span> 道</div>
     <button id="start-exam-btn">开始模拟考试</button>
@@ -54,8 +56,8 @@
     <button id="back-home-btn" class="gray">返回首页</button>
 </div>
 
-<!-- 结果区域 -->
-<div id="result-area" class="box result-box hide">
+<!--结果区域-->
+<div id="result-area" class="box hide">
     <div class="title">练习结果</div>
     <div class="score-text"></div>
     <div id="detail-wrap"></div>
@@ -63,9 +65,11 @@
     <button id="result-back-home-btn" class="gray">返回首页</button>
 </div>
 
+<!--页面底部鼓励文字 -->
+<div class="footer-tip">用心刷题，稳拿高分，祝你比赛顺利！</div>
+
 <script>
-// ====================== 题库&配置区 ======================
-// 注意：题库会由excel‑to‑question工具生成后替换下面三个数组
+// ====================== 题库区 ======================
 const singlePool = [
     {
         "type": "single",
@@ -2333,55 +2337,45 @@ const SETTING = {
     totalMinutes:60
 };
 // ======================================================
-
 let quizList = [];
 let current = 0;
 let userAnswers = [];
 let timer = null;
 let remainSeconds = 0;
-let mode = "exam"; // exam模拟考试 / err错题练习
-
-// 本地存储错题库
+let mode = "exam";
 const ERR_STORAGE_KEY = "exam_error_questions";
 
-//获取错题本
 function getErrList(){
     const str = localStorage.getItem(ERR_STORAGE_KEY);
-    if(!str) return [];
-    return JSON.parse(str);
+    return str ? JSON.parse(str) : [];
 }
-//保存错题本
 function saveErrList(list){
     localStorage.setItem(ERR_STORAGE_KEY, JSON.stringify(list));
 }
-//更新首页错题数量
 function refreshErrCount(){
     document.getElementById("err-count").innerText = getErrList().length;
 }
-//添加错题（去重），用title作为简单唯一标识
 function addErrQuestion(q){
     const err = getErrList();
-    const exist = err.some(item=>item.title === q.title);
-    if(!exist){
+    if(!err.some(item=>item.title === q.title)){
         err.push(q);
         saveErrList(err);
     }
     refreshErrCount();
 }
-//移除某道错题
 function removeErrByTitle(title){
     let err = getErrList();
     err = err.filter(item=>item.title !== title);
     saveErrList(err);
     refreshErrCount();
 }
-//清空错题
 function clearAllErr(){
-    saveErrList([]);
-    refreshErrCount();
+    if(confirm("确定清空全部错题库？不可恢复！")){
+        saveErrList([]);
+        refreshErrCount();
+    }
 }
 
-//数组打乱
 function shuffle(arr){
     let a = [...arr];
     for(let i=a.length-1;i>0;i--){
@@ -2393,31 +2387,27 @@ function shuffle(arr){
 function getRandomItems(pool,n){
     return shuffle(pool).slice(0,n);
 }
-//格式化时间 mm:ss
 function formatTime(s){
     const m = Math.floor(s/60);
     const sec = s%60;
-    return String(m).padStart(2,'0')+":"+String(sec).padStart(2,'0');
+    return String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0");
 }
 
-//启动倒计时
 function startTimer(){
     clearInterval(timer);
-    remainSeconds = SETTING.totalMinutes * 60;
+    remainSeconds = SETTING.totalMinutes*60;
     updateTimerView();
     timer = setInterval(()=>{
         remainSeconds--;
         updateTimerView();
         if(remainSeconds <=0){
             clearInterval(timer);
-            alert("考试时间已到，自动交卷！");
+            alert("考试时间到，自动交卷！");
             submitPaper();
         }
     },1000);
 }
-function stopTimer(){
-    clearInterval(timer);
-}
+function stopTimer(){ clearInterval(timer); }
 function updateTimerView(){
     const el = document.getElementById("timer-text");
     if(mode === "err"){
@@ -2426,14 +2416,9 @@ function updateTimerView(){
         return;
     }
     el.innerText = formatTime(remainSeconds);
-    if(remainSeconds <=60){
-        el.classList.add("timer-red");
-    }else{
-        el.classList.remove("timer-red");
-    }
+    el.classList.toggle("timer-red", remainSeconds <=60);
 }
 
-//提交试卷公共函数
 function submitPaper(){
     stopTimer();
     let rightCount = 0;
@@ -2443,7 +2428,7 @@ function submitPaper(){
         let ok = false;
         if(q.type === "multi"){
             if(!Array.isArray(ua)) ok = false;
-            else{
+            else {
                 const u = [...ua].sort();
                 const std = [...q.answer].sort();
                 ok = JSON.stringify(u) === JSON.stringify(std);
@@ -2453,29 +2438,18 @@ function submitPaper(){
         }
         if(ok){
             rightCount++;
-            //错题模式答对，移出错题本
-            if(mode === "err"){
-                removeErrByTitle(q.title);
-            }
-        }else{
-            wrongQuestions.push(q);
-        }
+            if(mode === "err") removeErrByTitle(q.title);
+        }else wrongQuestions.push(q);
     });
-
-    //只有模拟考试模式，做错题目加入错题本
-    if(mode === "exam"){
-        wrongQuestions.forEach(q=>addErrQuestion(q));
-    }
-
+    if(mode === "exam") wrongQuestions.forEach(q=>addErrQuestion(q));
     const score = rightCount * SETTING.scorePerQuestion;
-    document.getElementById("quiz-area").style.display="none";
-    document.getElementById("result-area").style.display="block";
-    if(mode==="exam"){
-        document.querySelector(".score-text").innerText = `得分：${score}分 (${rightCount}/${quizList.length})`;
+    document.getElementById("quiz-area").classList.add("hide");
+    document.getElementById("result-area").classList.remove("hide");
+    if(mode === "exam"){
+        document.querySelector(".score-text").innerText = `得分：${score}分 (${rightCount}/${quizList})`;
     }else{
-        document.querySelector(".score-text").innerText = `完成错题练习 ${rightCount}/${quizList.length}`;
+        document.querySelector(".score-text").innerText = `错题练习完成 ${rightCount}/${quizList.length}`;
     }
-
     const detailWrap = document.getElementById("detail-wrap");
     detailWrap.innerHTML = "";
     const typeMap = {single:"单选",multi:"多选",judge:"判断"};
@@ -2483,17 +2457,14 @@ function submitPaper(){
         const ua = userAnswers[i];
         let userShow,stdShow,isOk;
         if(q.type === "multi"){
-            if(!ua || !Array.isArray(ua) || ua.length===0){
-                userShow = "未作答";
-            }else{
-                userShow = ua.map(x=>q.options[x]).join("、");
-            }
+            if(!ua || !ua.length) userShow = "未作答";
+            else userShow = ua.map(x=>q.options[x]).join("、");
             stdShow = q.answer.map(x=>q.options[x]).join("、");
-            const u = (ua&&Array.isArray(ua)) ? [...ua].sort() : [];
+            const u = ua ? [...ua].sort() : [];
             const std = [...q.answer].sort();
             isOk = JSON.stringify(u) === JSON.stringify(std);
         }else{
-            userShow = (ua!==undefined) ? q.options[ua] : "未作答";
+            userShow = ua !== undefined ? q.options[ua] : "未作答";
             stdShow = q.options[q.answer];
             isOk = ua === q.answer;
         }
@@ -2503,13 +2474,11 @@ function submitPaper(){
         <div><strong>【${typeMap[q.type]} 第${i+1}题】</strong>${q.title}</div>
         <div>你的答案：${userShow}</div>
         <div>正确答案：${stdShow}</div>
-        <div>${isOk ? "✅回答正确" : "❌回答错误"}</div>
-        `;
+        <div>${isOk ? "✅回答正确" : "❌回答错误"}</div>`;
         detailWrap.appendChild(div);
     });
 }
 
-//初始化模拟考试
 function startExam(){
     mode = "exam";
     current = 0;
@@ -2517,74 +2486,70 @@ function startExam(){
     const singlePart = getRandomItems(singlePool, SETTING.singleCount);
     const multiPart = getRandomItems(multiPool, SETTING.multiCount);
     const judgePart = getRandomItems(judgePool, SETTING.judgeCount);
-    quizList = [...singlePart,...multiPart,...judgePart];
-
-    document.getElementById("home-area").style.display="none";
-    document.getElementById("result-area").style.display="none";
-    document.getElementById("quiz-area").style.display="block";
+    quizList = [...singlePart,...multiPart];
+    document.getElementById("home-area").classList.add("hide");
+    document.getElementById("result-area").classList.add("hide");
+    document.getElementById("quiz-area").classList.remove("hide");
     renderQuestion();
     startTimer();
 }
 
-//初始化错题练习
 function startErrPractice(){
     const errList = getErrList();
     if(errList.length === 0){
-        alert("错题库为空，请先参加模拟考试生成错题！");
+        alert("暂无错题，请先完成模拟考试！");
         return;
     }
     mode = "err";
-    stopTimer();
     current = 0;
     userAnswers = [];
     quizList = shuffle(errList);
-    document.getElementById("home-area").style.display="none";
-    document.getElementById("result-area").style.display="none";
-    document.getElementById("quiz-area").style.display="block";
+    document.getElementById("home-area").classList.add("hide");
+    document.getElementById("result-area").classList.add("hide");
+    document.getElementById("quiz-area").classList.remove("hide");
     renderQuestion();
     updateTimerView();
 }
 
 function renderQuestion(){
     const item = quizList[current];
+    const totalSingle = SETTING.singleCount;
+    // 关键优化：做完30道单选弹窗提示
+    if(current === totalSingle){
+        alert("单选部分已全部完成，接下来进入多选题练习！");
+    }
     const typeMap = {single:"单选题",multi:"多选题",judge:"判断题"};
-    document.querySelector(".q-index .q-type-tag").innerText = typeMap[item.type];
+    document.querySelector(".q-type-tag").innerText = typeMap[item.type];
     document.querySelector(".q-index span:last-child").innerText = `第 ${current+1} / ${quizList.length} 题`;
     document.querySelector(".q-text").innerText = item.title;
-
     const optWrap = document.getElementById("options-wrap");
     optWrap.innerHTML = "";
-
     item.options.forEach((opt,idx)=>{
         const div = document.createElement("div");
         div.className = "option-item";
         div.innerText = opt;
-
         const ua = userAnswers[current];
         if(item.type === "multi"){
             if(Array.isArray(ua) && ua.includes(idx)) div.classList.add("active");
         }else{
             if(ua === idx) div.classList.add("active");
         }
-
+        div.dataset.idx = idx;
         div.onclick = ()=>{
             if(item.type === "multi"){
-                div.classList.toggle("active");
-                let selected = [];
-                document.querySelectorAll(".option-item.active").forEach(el=>{
-                    selected.push(Number(el.dataset.idx));
-                });
-                userAnswers[current] = selected;
+                const idxNum = Number(div.dataset.idx);
+                let sel = userAnswers[current] || [];
+                if(sel.includes(idxNum)){
+                    sel = sel.filter(x=>x!==idxNum);
+                }else sel.push(idxNum);
+                userAnswers[current] = sel;
             }else{
-                document.querySelectorAll(".option-item").forEach(d=>d.classList.remove("active"));
-                div.classList.add("active");
-                userAnswers[current] = idx;
+                userAnswers[current] = Number(div.dataset.idx);
             }
+            renderQuestion();
         };
-        div.dataset.idx = idx;
         optWrap.appendChild(div);
     });
-
     const nextBtn = document.getElementById("next-btn");
     const submitBtn = document.getElementById("submit-btn");
     if(current < quizList.length -1){
@@ -2598,51 +2563,36 @@ function renderQuestion(){
 
 document.getElementById("next-btn").onclick = function(){
     const ans = userAnswers[current];
-    if(ans === undefined || (Array.isArray(ans) && ans.length===0)){
-        alert("请选择答案！");
+    if(ans === undefined || (Array.isArray(ans) && ans.length === 0)){
+        alert("请选择一个答案！");
         return;
     }
     current++;
     renderQuestion();
 };
-
 document.getElementById("submit-btn").onclick = function(){
-    clearInterval(timer);
+    stopTimer();
     submitPaper();
 };
-
 document.getElementById("restart-btn").onclick = function(){
-    if(mode === "exam"){
-        startExam();
-    }else{
-        startErrPractice();
-    }
+    if(mode === "exam") startExam();
+    else startErrPractice();
 };
-
 document.getElementById("back-home-btn").onclick = function(){
     stopTimer();
-    document.getElementById("quiz-area").style.display="none";
-    document.getElementById("home-area").style.display="block";
+    document.getElementById("quiz-area").classList.add("hide");
+    document.getElementById("home-area").classList.remove("hide");
     refreshErrCount();
 };
-
 document.getElementById("result-back-home-btn").onclick = function(){
-    document.getElementById("result-area").style.display="none";
-    document.getElementById("home-area").style.display="block";
+    document.getElementById("result-area").classList.add("hide");
+    document.getElementById("home-area").classList.remove("hide");
     refreshErrCount();
 };
-
 document.getElementById("start-exam-btn").onclick = startExam;
 document.getElementById("start-err-btn").onclick = startErrPractice;
-document.getElementById("clear-err-btn").onclick = function(){
-    if(confirm("确定要清空全部错题库吗？此操作不可恢复！")){
-        clearAllErr();
-    }
-};
-
-window.onload = function(){
-    refreshErrCount();
-};
+document.getElementById("clear-err-btn").onclick = clearAll;
+window.onload = refreshErrCount;
 </script>
 </body>
 </html>
