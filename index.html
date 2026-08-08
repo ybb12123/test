@@ -7,7 +7,7 @@
     <style>
         *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif;}
         body{background:#f5f7fa;padding:16px;color:#222;max-width:720px;margin:0 auto;}
-        .box{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.1);}
+        .box{background:#fff;border-radius:12;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.1);}
         .title{font-size:20px;font-weight:bold;text-align:center;margin-bottom:8px;}
         .desc-text{font-size:14px;color:#555;text-align:center;margin-bottom:12px;line-height:1.6;}
         .timer-wrap{text-align:right;margin:-8px 0 10px 0;font-size:16px;font-weight:500;}
@@ -66,7 +66,7 @@
 </div>
 
 <!--页面底部鼓励文字 -->
-<div class="footer-tip">用心刷题，稳拿高分，祝你比赛顺利！</div>
+<div class="footer-tip">用心刷题，稳拿高分，比赛顺利！</div>
 
 <script>
 // ====================== 题库区 ======================
@@ -2343,6 +2343,7 @@ let userAnswers = [];
 let timer = null;
 let remainSeconds = 0;
 let mode = "exam";
+let popFlag = false; // 弹窗标记，只弹出一次
 const ERR_STORAGE_KEY = "exam_error_questions";
 
 function getErrList(){
@@ -2446,7 +2447,7 @@ function submitPaper(){
     document.getElementById("quiz-area").classList.add("hide");
     document.getElementById("result-area").classList.remove("hide");
     if(mode === "exam"){
-        document.querySelector(".score-text").innerText = `得分：${score}分 (${rightCount}/${quizList})`;
+        document.querySelector(".score-text").innerText = `得分：${score}分 (${rightCount}/${quizList.length})`;
     }else{
         document.querySelector(".score-text").innerText = `错题练习完成 ${rightCount}/${quizList.length}`;
     }
@@ -2483,10 +2484,11 @@ function startExam(){
     mode = "exam";
     current = 0;
     userAnswers = [];
+    popFlag = false; // 重置弹窗标记
     const singlePart = getRandomItems(singlePool, SETTING.singleCount);
     const multiPart = getRandomItems(multiPool, SETTING.multiCount);
     const judgePart = getRandomItems(judgePool, SETTING.judgeCount);
-    quizList = [...singlePart,...multiPart];
+    quizList = [...singlePart,...multiPart,...judgePart];
     document.getElementById("home-area").classList.add("hide");
     document.getElementById("result-area").classList.add("hide");
     document.getElementById("quiz-area").classList.remove("hide");
@@ -2501,6 +2503,7 @@ function startErrPractice(){
         return;
     }
     mode = "err";
+    popFlag = true; // 错题模式不触发弹窗
     current = 0;
     userAnswers = [];
     quizList = shuffle(errList);
@@ -2514,9 +2517,10 @@ function startErrPractice(){
 function renderQuestion(){
     const item = quizList[current];
     const totalSingle = SETTING.singleCount;
-    // 关键优化：做完30道单选弹窗提示
-    if(current === totalSingle){
-        alert("单选部分已全部完成，接下来进入多选题练习！");
+    // 仅第一次到达30题才弹窗
+    if(mode === "exam" && current === totalSingle && popFlag === false){
+        alert("单选部分已全部完成，即将进入多选题！");
+        popFlag = true;
     }
     const typeMap = {single:"单选题",multi:"多选题",judge:"判断题"};
     document.querySelector(".q-type-tag").innerText = typeMap[item.type];
@@ -2537,11 +2541,10 @@ function renderQuestion(){
         div.dataset.idx = idx;
         div.onclick = ()=>{
             if(item.type === "multi"){
-                const idxNum = Number(div.dataset.idx);
                 let sel = userAnswers[current] || [];
-                if(sel.includes(idxNum)){
-                    sel = sel.filter(x=>x!==idxNum);
-                }else sel.push(idxNum);
+                const idxNum = Number(div.dataset.idx);
+                if(sel.includes(idxNum)) sel = sel.filter(x=>x!==idxNum);
+                else sel.push(idxNum);
                 userAnswers[current] = sel;
             }else{
                 userAnswers[current] = Number(div.dataset.idx);
@@ -2564,7 +2567,7 @@ function renderQuestion(){
 document.getElementById("next-btn").onclick = function(){
     const ans = userAnswers[current];
     if(ans === undefined || (Array.isArray(ans) && ans.length === 0)){
-        alert("请选择一个答案！");
+        alert("请选择答案！");
         return;
     }
     current++;
