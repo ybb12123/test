@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>考前备考练习</title>
+    <title>甘肃省胸部肿瘤精准微创诊疗技术
+技能大赛练习</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif;}
         body{background:#f5f7fa;padding:16px;color:#222;max-width:720px;margin:0 auto;}
-        .box{background:#fff;border-radius:12;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.1);}
+        .box{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0.1);}
         .title{font-size:20px;font-weight:bold;text-align:center;margin-bottom:8px;}
         .desc-text{font-size:14px;color:#555;text-align:center;margin-bottom:12px;line-height:1.6;}
         .timer-wrap{text-align:right;margin:-8px 0 10px 0;font-size:16px;font-weight:500;}
@@ -20,13 +21,15 @@
         button{width:100%;padding:14px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:16px;margin-top:8px;cursor:pointer;}
         button.warn{background:#ef4444;}
         button.gray{background:#64748b;}
-        button:disabled{background:#94a3b8;cursor:not-allowed;}
+        button.small-btn{width:auto;padding:8px 16px;font-size:14px;margin:6px 0;}
+        button:disabled{background:#94a3b;cursor:not-allowed;}
         .result-box{display:none;}
         .hide{display:none !important;}
         .home-box{text-align:center;}
         .err-count-tip{margin:10px 0;color:#dc2626;font-size:15px;}
         .score-text{text-align:center;font-size:22px;font-weight:bold;margin:12px 0;}
         .answer-info{margin-top:12px;padding:14px;background:#f0fdf4;border-radius:8px;font-size:15px;line-height:1.7;margin-bottom:12px;}
+        .opt-row{margin:4px 0;}
         /* 底部鼓励文字样式 */
         .footer-tip{text-align:center;color:#3b82f6;font-size:15px;margin-top:30px;padding:10px 0;}
     </style>
@@ -34,7 +37,8 @@
 <body>
 <!--首页区域-->
 <div id="home-area" class="box home-box">
-    <div class="title">甘肃省胸部肿瘤精准微创诊疗技术技能大赛考前练习</div>
+    <div class="title">甘肃省胸部肿瘤精准微创诊疗技术
+技能大赛练习</div>
     <div class="desc-text">单选30道(每题2分)，多选10道(每题2分)，判断10道(每题2分)，共50题，满分100分</div>
     <div class="err-count-tip">错题数量：<span id="err-count">0</span> 道</div>
     <button id="start-exam-btn">开始模拟考试</button>
@@ -51,6 +55,7 @@
     </div>
     <div class="q-text"></div>
     <div id="options-wrap"></div>
+    <button id="clear-multi-btn" class="gray small-btn hide">清空已选答案</button>
     <button id="next-btn">下一题</button>
     <button id="submit-btn" class="hide">提交查看成绩</button>
     <button id="back-home-btn" class="gray">返回首页</button>
@@ -2343,7 +2348,7 @@ let userAnswers = [];
 let timer = null;
 let remainSeconds = 0;
 let mode = "exam";
-let popFlag = false; // 弹窗标记，只弹出一次
+let popFlag = false; // 弹窗只弹出一次标记
 const ERR_STORAGE_KEY = "exam_error_questions";
 
 function getErrList(){
@@ -2469,10 +2474,19 @@ function submitPaper(){
             stdShow = q.options[q.answer];
             isOk = ua === q.answer;
         }
+        // 修复：定义字母数组
+        const letterArr = ["A","B","C","D"];
+        let optHtml = '<div style="margin:8px 0;">全部选项：<br>';
+        q.options.forEach((optStr,idx)=>{
+            optHtml += `<div class="opt-row">${letterArr[idx]}. ${optStr}</div>`;
+        })
+        optHtml += "</div>";
+
         const div = document.createElement("div");
         div.className = "answer-info";
         div.innerHTML = `
         <div><strong>【${typeMap[q.type]} 第${i+1}题】</strong>${q.title}</div>
+        ${optHtml}
         <div>你的答案：${userShow}</div>
         <div>正确答案：${stdShow}</div>
         <div>${isOk ? "✅回答正确" : "❌回答错误"}</div>`;
@@ -2508,7 +2522,7 @@ function startErrPractice(){
     userAnswers = [];
     quizList = shuffle(errList);
     document.getElementById("home-area").classList.add("hide");
-    document.getElementById("result-area").classList.add("hide");
+    document.getElementById("result-area").classList.remove("hide");
     document.getElementById("quiz-area").classList.remove("hide");
     renderQuestion();
     updateTimerView();
@@ -2524,10 +2538,18 @@ function renderQuestion(){
     }
     const typeMap = {single:"单选题",multi:"多选题",judge:"判断题"};
     document.querySelector(".q-type-tag").innerText = typeMap[item.type];
-    document.querySelector(".q-index span:last-child").innerText = `第 ${current+1} / ${quizList.length} 题`;
+    document.querySelector(".q-index span:last-child").innerText = `第 ${current+1} / ${quizList.length}`;
     document.querySelector(".q-text").innerText = item.title;
     const optWrap = document.getElementById("options-wrap");
     optWrap.innerHTML = "";
+    // 控制清空按钮显示隐藏
+    const clearMultiBtn = document.getElementById("clear-multi-btn");
+    if(item.type === "multi"){
+        clearMultiBtn.classList.remove("hide");
+    }else{
+        clearMultiBtn.classList.add("hide");
+    }
+    // 渲染分行选项
     item.options.forEach((opt,idx)=>{
         const div = document.createElement("div");
         div.className = "option-item";
@@ -2543,8 +2565,9 @@ function renderQuestion(){
             if(item.type === "multi"){
                 let sel = userAnswers[current] || [];
                 const idxNum = Number(div.dataset.idx);
-                if(sel.includes(idxNum)) sel = sel.filter(x=>x!==idxNum);
-                else sel.push(idxNum);
+                if(sel.includes(idxNum)){
+                    sel = sel.filter(x=>x!==idxNum);
+                }else sel.push(idxNum);
                 userAnswers[current] = sel;
             }else{
                 userAnswers[current] = Number(div.dataset.idx);
@@ -2563,6 +2586,12 @@ function renderQuestion(){
         submitBtn.classList.remove("hide");
     }
 }
+
+// 清空多选按钮
+document.getElementById("clear-multi-btn").onclick = function(){
+    userAnswers[current] = [];
+    renderQuestion();
+};
 
 document.getElementById("next-btn").onclick = function(){
     const ans = userAnswers[current];
@@ -2590,7 +2619,6 @@ document.getElementById("back-home-btn").onclick = function(){
 document.getElementById("result-back-home-btn").onclick = function(){
     document.getElementById("result-area").classList.add("hide");
     document.getElementById("home-area").classList.remove("hide");
-    refreshErrCount();
 };
 document.getElementById("start-exam-btn").onclick = startExam;
 document.getElementById("start-err-btn").onclick = startErrPractice;
